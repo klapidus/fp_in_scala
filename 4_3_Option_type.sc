@@ -19,7 +19,7 @@ enum Option[+A]:
   // note that orElse returns Option[B], and not B like getOrElse
   // this one is neat!
   def orElse[B >: A](ob: => Option[B]): Option[B] =
-    //this.map((x: B) => Some(x)).getOrElse(ob)
+    this.map((x: B) => Some(x)).getOrElse(ob)
     // or shorter
     this.map(Some(_)).getOrElse(ob)
 
