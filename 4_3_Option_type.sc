@@ -43,3 +43,56 @@ b.orElse(a)
 
 Some(6).filter(_ < 5)
 Some(6).filter(_ > 5)
+
+// 4.3
+def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+  a.flatMap {
+    // what we need here inside is f: x: A => Option[C]
+    // x => b.map( y => f(x,y))
+    x =>
+      b.map {
+        y => f(x, y)
+      }
+  }
+
+// we can re-write map2 in the following way, verbose:
+def map2Alt[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = {
+  // we can think of it as a function of b: Option[B] => Option[C]
+  // b.map(f2)
+  // where the signature for f2 is B => C
+  // again, this is a simple map -- x: Option[B] goes to res: Option[C]
+  def inner(b: Option[B], externalParam: A): Option[C] =
+    b.map(x => f(externalParam, x))
+  // on the other hand, it is also a function of externalParam: A
+  // when b is fixed, it's signature is A => Option[C]
+  // so we can flat-map like this:
+  //a.flatMap{
+  //  (x: A) => inner(b, x)
+  //}
+  // or, simpler
+  a.flatMap(inner(b,_))
+
+}
+
+// another implementation:
+def map2Alt2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+  // we get A map A => Option[C], so we get Option[Option[A]]
+  a.map(x => b.map(y => f(x,y))).getOrElse(None)
+
+// finally, the easiest solution with pattern matching
+def map2Alt3[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = (a, b) match {
+  case (Some(x), Some(y)) => Some(f(x,y))
+  case _ => None
+}
+
+
+// 4.3.
+val a1: Option[Int] = Some(23)
+val b1: Option[Int] = Some(85)
+map2(a1, b1)((x, y) => math.pow(x + y, 2).toInt)
+map2Alt(a1, b1)((x, y) => math.pow(x + y, 2).toInt)
+map2Alt2(a1, b1)((x, y) => math.pow(x + y, 2).toInt)
+map2Alt3(a1, b1)((x, y) => math.pow(x + y, 2).toInt)
+
+
+
