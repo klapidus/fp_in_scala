@@ -94,5 +94,55 @@ map2Alt(a1, b1)((x, y) => math.pow(x + y, 2).toInt)
 map2Alt2(a1, b1)((x, y) => math.pow(x + y, 2).toInt)
 map2Alt3(a1, b1)((x, y) => math.pow(x + y, 2).toInt)
 
+//4.4.
+// [Some(1), Some(4), Some(5)] => Some[1, 4, 5]
+// [Some(1), None, Some(5)] => None
+def sequence[A](as: List[Option[A]]): Option[List[A]] =
+  val z = Some(List.empty[A])
+  def inner(b: List[A], a: A): List[A] =
+    b :+ a
+  as.foldLeft(z){
+    // 3 different options
+    //(b, a) => map2(b, a)(inner)
+    map2(_, _)(inner)
+    //map2(_, _)(_ :+ _)
+  }
+
+def sequenceAlt[A](as: List[Option[A]]) =
+  as.foldLeft(Some(List.empty[A])){
+    map2(_, _)(_ :+ _)
+  }
+
+// this one is excessively verbose
+def traverseAlt[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
+  as.foldLeft(Some(List.empty[B])) {
+    (b, a) =>
+      (b, a) match {
+        case (_, None) => None
+        case (z, x) => map2(z, f(x))(_ :+ _)
+      }
+  }
+
+def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
+  as.foldLeft(Some(List.empty[B])) {
+    (z, x) => map2(z, f(x))(_ :+ _)
+  }
+
+def sequenceTraverse[A](as: List[Option[A]]): Option[List[A]] =
+  traverse(as)((x: Option[A]) => x)
+  // or simpler:
+  //traverse(as)(a => a)
+
+
+sequence(List(Some(1), Some(4), Some(5)))
+sequence(List(Some(1), None, Some(5)))
+
+sequenceTraverse(List(Some(1), Some(4), Some(5)))
+sequenceTraverse(List(Some(1), None, Some(5)))
+
+traverse(List(1, 2, 3))((x: Int) => Some(x + 108))
+traverse(List(1, 2, 3))((x: Int) => if (x < 3) Some(x + 108) else None)
+
+//Cons(h, t) is h :: t
 
 
