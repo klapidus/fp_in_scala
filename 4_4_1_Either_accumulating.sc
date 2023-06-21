@@ -47,3 +47,34 @@ case class Person(name: Name, age: Age)
 map2Both(Name(""), Age(-7))(Person(_,_))
 // neat, we accumulated two errors into
 // Left(List(e1, e2))
+
+object Person:
+  def makeBoth(name: String, age: Int): Either[List[String], Person] =
+    map2Both(Name(name), Age(age))(new Person(_, _))
+
+val p1 = Person.makeBoth("kiki", 108)
+val p2 = Person.makeBoth("ikik", 801)
+
+// List is nesting, because we have Either[List[String], A]
+// so the type E in map2Both is List[String]
+map2Both(p1, p2)((_, _))
+
+// define map2All, require for Either[List[E], A]
+type EitherL[H, Q] = Either[List[H], Q]
+def map2All[E, A, B, C](a: EitherL[E, A], b: EitherL[E, B])
+                       (f: (A, B) => C): EitherL[E, C] =
+  (a, b) match {
+    case (Right(va), Right(vb)) => Right(f(va, vb))
+    case (Left(e1), Right(_)) => Left(e1)
+    case (Right(_), Left(e2)) => Left(e2)
+    // this way we stay in the List() context
+    case (Left(e1), Left(e2)) => Left(e1 ++ e2)
+  }
+
+val pair = map2All(p1, p2)((_, _))
+
+// TODO
+// traverse the list and collect all errors with help of map2All
+def traverseAll[E, A, B](as: List[A])(f: A => Either[E, B]): Either[List[E], List[B]] =
+  ???
+
