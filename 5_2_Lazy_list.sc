@@ -63,8 +63,39 @@ enum LazyList[+A]:
     case Empty => true
   }
 
-  // TODO: proceed with foldRight
-  // TODO: implement forAll using foldRight
+  // base z is lazy z: => B
+  def foldRight[B](z: => B)(f: (A, => B) => B): B = this match {
+    case Empty => z
+    case Cons(hd, tl) => f(hd(), tl().foldRight(z)(f))
+  }
+
+  // forAll with foldRight
+  def forAllFoldR(p: A => Boolean): Boolean =
+    foldRight(true)((a, acc) => p(a) & acc)
+
+  // TODO: 5.5 takeWhile via foldRight
+//  def takeWhileFoldR(p: A => Boolean): LazyList[A] = {
+//    foldRight(Empty){
+//      (a, acc) =>
+//        if p(a) then Cons(a, acc.takeWhileFoldR(p)) else Empty
+//    }
+//  }
+
+  // 5.6
+  // this one is funny,
+  def headOptionFoldR: Option[A] =
+    foldRight(None: Option[A])((a, acc) => Some(a))
+
+  def mapFoldR[B](f: A => B): LazyList[B] =
+    foldRight(Empty: LazyList[B]){
+      (a, acc) => Cons(() => f(a), () => acc)
+    }
+
+// TODO
+//  def filterFoldR(p: A => Boolean): LazyList[A] =
+//    foldRight(Empty: LazyList[A]){
+//      (a, acc) => if p(a) then Cons(a, acc) else acc
+//    }
 
 
 object LazyList:
@@ -93,10 +124,10 @@ ll1.drop(2).toList
 ll1.drop(3).toList
 ll1.drop(4).toList
 
-ll1.dropAlt(1).toList
-ll1.dropAlt(2).toList
-ll1.dropAlt(3).toList
-ll1.dropAlt(4).toList
+ll1.dropRB(1).toList
+ll1.dropRB(2).toList
+ll1.dropRB(3).toList
+ll1.dropRB(4).toList
 
 val ll2 = LazyList(22, 33, 44, 17)
 ll2.takeWhile(_ > 1).toList
@@ -105,3 +136,7 @@ ll2.takeWhile(_ > 25).toList
 
 ll2.forAll(_ < 100)
 ll2.forAll(_ > 100)
+
+val ll3 = LazyList.Empty
+ll2.headOptionFoldR
+ll3.headOptionFoldR
