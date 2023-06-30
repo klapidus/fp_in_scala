@@ -12,6 +12,44 @@ enum SlackList[+A]:
     case _ => Empty
   }
 
+  def headOption: Option[A] = this match {
+    case Cons(hd, _) => Some(hd())
+    case _ => None
+  }
+
+  def tail: SlackList[A] = this match {
+    case Cons(_, tl) => tl()
+    case Empty => Empty
+  }
+
+  // 5.11 - very nice one
+  def unfold[A, S](state: S)
+                  (f: S => Option[(A, S)]): SlackList[A] = f(state) match {
+    case Some(newVal, newState) =>
+      SlackList.Cons(() => newVal, () => unfold(newState)(f))
+    case None => SlackList.Empty
+  }
+
+  // 5.13 - map via unfold - neat
+  def mapUnfold[B](f: A => B): SlackList[B] = {
+    def f1(state: SlackList[A]): Option[(B, SlackList[A])] = state match {
+      case Cons(hd, tl) => Some(f(hd()), tl())
+      case Empty: SlackList[A] => None
+    }
+    unfold(this)(f1)
+  }
+
+  // 5.13 take via unfold, first brute-force attempt : )
+  def takeUnfold(n: Int): SlackList[A] = {
+    def action(state: (SlackList[A], Int)): Option[(A, (SlackList[A], Int))] = {
+      state match {
+        case (Cons(hd, tl), n) if n > 0 => Some(hd(), (tl(), n - 1))
+        case _ => None
+      }
+    }
+    unfold((this, n))(action)
+  }
+
 
 val ones: SlackList[Int] = SlackList.Cons(() => 1, () => ones)
 ones.take(5).toList
@@ -30,9 +68,8 @@ def from(n: Int): SlackList[Int] =
 //  SlackList.Cons(() => fibInt(), () => )
 //}
 
-// 5.11 - very nice one
-def unfold[A, S](state: S)
-                (f: S => Option[(A, S)]): SlackList[A] = f(state) match {
-  case Some(newVal, newState) => SlackList.Cons(() => newVal, () => unfold(newState)(f))
-  case None => SlackList.Empty
-}
+val sl1: SlackList[Int] = from(5)
+sl1.mapUnfold(_ * 108).take(3).toList
+sl1.mapUnfold(_ * 108).takeUnfold(1).toList
+sl1.mapUnfold(_ * 108).takeUnfold(2).toList
+sl1.mapUnfold(_ * 108).takeUnfold(3).toList
