@@ -91,6 +91,32 @@ enum SlackList[+A]:
   }
 
   // TODO: tails with unfold
+  def tails: SlackList[SlackList[A]] = {
+    def action(state: SlackList[A]): Option[(SlackList[A], SlackList[A])] = state match {
+      case Cons(hd, tl) => Some(Cons(() => hd(), () => tl()), tl())
+      case _ => None
+    }
+    unfold(this)(action)
+  }
+
+  def exists(p: A => Boolean): Boolean = this match {
+    case Cons(hd, tl) if p(hd()) => true
+    case Cons(_, tl) => tl().exists(p)
+    case _ => false
+  }
+
+  // the red book solution is very elegant
+  def existsRB(p: A => Boolean): Boolean = this match {
+    case Cons(hd, tl) => p(hd()) || tl().existsRB(p)
+    case _ => false
+  }
+
+  // TODO implement subsequence with
+  def hasSubsequence[A](l: SlackList[A]): Boolean =
+    this.tails.exists(_.startsWith(l))
+    //this.tails.mapUnfold(_.startsWith(l)).toList.contains(true)
+
+  // TODO scanRight
 
 
 val ones: SlackList[Int] = SlackList.Cons(() => 1, () => ones)
