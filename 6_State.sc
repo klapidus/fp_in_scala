@@ -43,3 +43,71 @@ def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
 
 val rng7 = SimpleRNG(seed=108)
 ints(3)(rng7)
+
+
+type Rand[+A] = RNG => (A, RNG)
+
+def unit[A](a: A): Rand[A] = {
+  rng => (a, rng)
+}
+
+def map[A, B](s: Rand[A])(f: A => B): Rand[B] = {
+  // nothing but a function: RNG => (B, RNG)
+  rng => {
+    val (a, rng1) = s(rng)
+    (f(a), rng1)
+  }
+}
+
+def doubleViaMap(rng: RNG): (Double, RNG) = {
+  map(nonNegativeInt){
+    (x: Int) => ((x - 1)/Int.MaxValue).toDouble
+  }(rng)
+}
+
+// note the difference
+// in the first case the function returns a value (Double, RNG)
+// in the second case the function returns a value
+// Rand[Double], that is RNG => (Double, RNG)
+def doubleViaMapAction: Rand[Double] = {
+  map(nonNegativeInt){
+    (x: Int) => ((x - 1)/Int.MaxValue).toDouble
+  }
+}
+
+doubleViaMap(rng)
+
+def map2[A, B, C](ra: Rand[A])(rb: Rand[B])
+                 (f: (A, B) => C): Rand[C] = {
+  rng => {
+    val (a, rng1) = ra(rng)
+    val (b, rng2) = rb(rng1)
+    (f(a, b), rng2)
+  }
+}
+
+def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
+  map2(ra)(rb)((_, _))
+
+def flatMap[A, B](r: Rand[A])(f: A => Rand[B]): Rand[B] = {
+  // reminder: what we need to construct is RNG => (B, RNG)
+  rng => {
+    val (a, rngNext) = r(rng)
+    f(a)(rngNext)
+  }
+}
+
+def mapViaFlatMap[A, B](r: Rand[A])(f: A => B): Rand[B] = {
+  flatMap(r){
+    (x: A) => unit(f(x))
+  }
+}
+
+// TODO
+def map2ViaFlatMap[A, B, C](ra: Rand[A])(rb: Rand[B])
+                           (f: (A, B) => C): Rand[C] = {
+//  flatMap(ra){
+//  }
+}
+
+
