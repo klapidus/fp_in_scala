@@ -106,8 +106,13 @@ def mapViaFlatMap[A, B](r: Rand[A])(f: A => B): Rand[B] = {
 // TODO
 def map2ViaFlatMap[A, B, C](ra: Rand[A])(rb: Rand[B])
                            (f: (A, B) => C): Rand[C] = {
-//  flatMap(ra){
-//  }
+  flatMap(ra){
+    x => {
+      mapViaFlatMap(rb){
+        y => f(x, y)
+      }
+    }
+  }
 }
 
 
