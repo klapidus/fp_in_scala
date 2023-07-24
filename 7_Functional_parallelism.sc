@@ -9,6 +9,8 @@ def sum(ints: IndexedSeq[Int]): Par[Int] =
  */
 import Par.fork
 
+//import java.util.concurrent.ExecutorService
+//import java.util.concurrent.Callable
 import scala.concurrent.duration.TimeUnit
 
 trait ExecutorService:
@@ -81,26 +83,56 @@ def parMap[A, B](as: List[A])(f: A => B): Par[List[B]] = fork{
   sequence(fbs)
 }
 
-/*
-// next TODO: parFilter implementation
+def sequenceFilter[A](pas: List[Par[A]])(f: A => Boolean): Par[List[A]] =
+  val z = Par.unit(List.empty[A])
+  pas.foldRight(z)((pa, acc) => pa.map2(acc)(_ :: _))
+
 def filterPar[A](pas: List[Par[A]])(pr: A => Boolean): Par[List[A]] =
   val z = Par.unit(List.empty[A])
+  def filterFun(a: A, b: List[A]): List[A] = {
+    if pr(a) then b
+    else a :: b
+  }
   pas.foldRight(z){
-    (pa, acc) => if pr(pa) then pa.map2(acc)(_ :: _)
-    else acc
+    (pa, acc) => pa.map2(acc)(filterFun)
   }
 
-
 def parFilter[A](as: List[A])(f: A => Boolean): Par[List[A]] = {
-  val filtered: List[Par[A]] = as.map(asyncF(identity))
+  val pars: List[Par[A]] = as.map(asyncF(identity))
+  filterPar(pars)(f)
 }
-*/
 
+//import java.util.concurrent.Executors
 
+//class JExecutorService(val es: java.util.concurrent.ExecutorService) extends ExecutorService:
+//  override def submit[A](a: Callable[A]): Future[A] = es.submit(a)
 
+//val a = lazyUnit(42 + 1)
+//val es = Executors.newFixedThreadPool(1)
+//println(a(es))
 
+def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+  es =>
+    val idx = n.run(es).get
+    choices(idx).run(es)
 
+//def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A]
 
+extension [A](pa: Par[A])
+  def flatMap[B](f: A => Par[B]): Par[B] =
+    es =>
+      f(pa.run(es).get).run(es)
 
+def join[A](ppa: Par[Par[A]]): Par[A] = es => {
+  ppa.run(es).get.run(es)
+}
 
+extension [A](pa: Par[A])
+  def flatMapViaJoin[B](f: A => Par[B]): Par[B] = {
+    join(pa.map(f))
+  }
+
+def joinViaFlatMap[A](ppa: Par[Par[A]]): Par[A] =
+  // honestly, didn't get this one:
+  ppa.flatMap(identity)
 
