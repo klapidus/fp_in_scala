@@ -1,9 +1,9 @@
 package fpinscala.testing
 
-import fpinscala.state.*
+import fpinscala.state.{State, RNG, nonNegativeInt}
 
 
-opaque type Gen[A] = State[RNG, A]
+opaque type Gen[+A] = State[RNG, A]
 // Gen[A] is State[RNG, A]
 // that is RNG => (A, RNG)
 def choose(start: Int, stopExclusive: Int): Gen[Int] =
@@ -18,10 +18,11 @@ def unit[A](a: => A): Gen[A] = {
 
 extension [A](self: Gen[A])
   def flatMap[B](f: A => Gen[B]): Gen[B] =
-    rng => {
-      val (a, rng_next) = self(rng)
-      f(a)(rng_next)
-    }
+    State.flatMap(self)(f)
+
+extension [A](self: Gen[A])
+  def run(rng: RNG): (A, RNG) =
+    State.run(self)(rng)
 
 // TODO:
 //extension [A](self: Gen[A])
