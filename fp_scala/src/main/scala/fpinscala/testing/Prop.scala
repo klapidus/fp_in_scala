@@ -1,6 +1,6 @@
 package fpinscala.testing
 
-import fpinscala.state.{State, RNG}
+import fpinscala.state.{State, RNG, SimpleRNG}
 
 opaque type FailedCase = String
 opaque type SuccessCount = Int
@@ -67,4 +67,13 @@ extension (self: Prop) def ||(that: Prop): Prop =
   (n, rng) => self(n, rng) match
     case Result.Falsified(_, _) => that(n, rng)
     case x => x
+
+extension (self: Prop)
+  def runP(): Unit =
+    self(100, SimpleRNG(System.currentTimeMillis())) match
+      case Result.Falsified(msg, n) =>
+        println(s"! Falsified after $n passed tests:\n $msg")
+      case Result.Passed =>
+        println(s"+ OK, passed 100 tests.")
+
 
